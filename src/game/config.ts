@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import BootScene from './scenes/BootScene'
+import IntroScene from './scenes/IntroScene'
 import WorldScene from './scenes/WorldScene'
 import TriviaScene from './scenes/TriviaScene'
 import ShellGameScene from './scenes/ShellGameScene'
@@ -23,6 +24,7 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [
     BootScene,
+    IntroScene,
     WorldScene,
     TriviaScene,
     ShellGameScene,
