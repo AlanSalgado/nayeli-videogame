@@ -1,6 +1,12 @@
 import Phaser from 'phaser'
 import BootScene from './scenes/BootScene'
 import WorldScene from './scenes/WorldScene'
+import TriviaScene from './scenes/TriviaScene'
+import ShellGameScene from './scenes/ShellGameScene'
+import SimonSaysScene from './scenes/SimonSaysScene'
+import WhackAMoleScene from './scenes/WhackAMoleScene'
+import RhythmScene from './scenes/RhythmScene'
+import ObstacleRunnerScene from './scenes/ObstacleRunnerScene'
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -15,7 +21,16 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, WorldScene],
+  scene: [
+    BootScene,
+    WorldScene,
+    TriviaScene,
+    ShellGameScene,
+    SimonSaysScene,
+    WhackAMoleScene,
+    RhythmScene,
+    ObstacleRunnerScene,
+  ],
 }
 
 export default config
