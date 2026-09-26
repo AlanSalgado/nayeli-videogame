@@ -38,7 +38,15 @@
   background: #ff8cc8;
 }
 
+#phaser-container {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #phaser-container canvas {
   display: block;
-  margin: 0 auto;
 }

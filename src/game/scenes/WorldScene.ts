@@ -35,6 +35,8 @@ export default class WorldScene extends Phaser.Scene {
   }
 
   create() {
+    this.transitioning = false
+
     // Mundo grande con scroll
     this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H)
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H)
