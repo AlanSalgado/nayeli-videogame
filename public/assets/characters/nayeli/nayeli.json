@@ -1,0 +1,117 @@
+{
+  "character": {
+    "id": "6c88207a-c014-41b7-9655-139f9df58c36",
+    "name": "Idle",
+    "prompt": "Cheerful young woman with a big smile, long wavy dark brown hair past her chest with soft curtain bangs, thin gold wire-frame glasses, warm light-tan skin, red lips. Wearing a black leather jacket over a white top, wide-leg light blue jeans and black lace-up boots. Small gold heart necklace.",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "nayeli.png",
+    "cell_size": {
+      "width": 84,
+      "height": 84
+    },
+    "sheet_size": {
+      "width": 672,
+      "height": 840
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "south-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "east"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "north-east"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "north"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "north"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "north-west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "west"
+      },
+      {
+        "row": 9,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "2729c636-ad69-4065-8f4c-2d3a26f79ae5",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-04T03:20:41.891954+00:00"
+}

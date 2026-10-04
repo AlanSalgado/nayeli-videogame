@@ -6,29 +6,34 @@ import {
   type MiniGameKey,
   GameRegistry,
 } from '../registry'
+import { ALL_TILESETS, TILE_SIZE } from '../world/tilesets'
+import { EMPTY, GRASS, MAP_H, MAP_SCALE, MAP_W, buildVillage } from '../world/villageMap'
+import {
+  NAYELI_KEY,
+  directionFromInput,
+  idleAnim,
+  walkAnim,
+  type Direction,
+} from '../characters/nayeli'
 
 const SPEED = 160
-const WORLD_W = 1600
-const WORLD_H = 1200
+const PIXEL_FONT = "'Press Start 2P', monospace"
+const COMPLETED_TINT = 0x777788
 
-// Posición y color de cada zona en el mundo
-const ZONE_DEFS: Record<MiniGameKey, { x: number; y: number; color: number }> = {
-  trivia:          { x: 300,  y: 200,  color: 0x3a5f8a },
-  shellGame:       { x: 1300, y: 200,  color: 0x8a3a5f },
-  simonSays:       { x: 300,  y: 1000, color: 0x3a8a3a },
-  whackAMole:      { x: 1300, y: 1000, color: 0x8a6a3a },
-  rhythm:          { x: 800,  y: 200,  color: 0x5a3a8a },
-  obstacleRunner:  { x: 800,  y: 1000, color: 0x3a7a8a },
-}
+// Door trigger: the door tile plus a strip of the tile in front of it. The player's
+// feet box is 28px wide inside a 32px doorway, so we also accept her pressing
+// against the wall next to the door instead of requiring pixel-perfect alignment.
+const DOOR_TRIGGER_EXTRA = 16
+const DOOR_TRIGGER_MAX_OFFSET_Y = 10
+const DOOR_TRIGGER_MAX_OFFSET_X = 14
 
 export default class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>
   private hudText!: Phaser.GameObjects.Text
-  private zones: Phaser.Physics.Arcade.StaticGroup | null = null
-  private zoneKeys: MiniGameKey[] = []
   private transitioning = false
+  private facing: Direction = 'south'
 
   constructor() {
     super({ key: 'WorldScene' })
@@ -37,64 +42,107 @@ export default class WorldScene extends Phaser.Scene {
   create() {
     this.transitioning = false
 
+    const village = buildVillage()
+    const tileScreenSize = TILE_SIZE * MAP_SCALE
+    const worldW = MAP_W * tileScreenSize
+    const worldH = MAP_H * tileScreenSize
+
     // Mundo grande con scroll
-    this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H)
-    this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H)
+    this.physics.world.setBounds(0, 0, worldW, worldH)
+    this.cameras.main.setBounds(0, 0, worldW, worldH)
 
-    // Fondo verde
-    this.add.rectangle(WORLD_W / 2, WORLD_H / 2, WORLD_W, WORLD_H, 0x4a7c59)
+    // Tilemap built from code data (see world/villageMap.ts)
+    const map = this.make.tilemap({
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+      width: MAP_W,
+      height: MAP_H,
+    })
+    const tilesets = ALL_TILESETS
+      .map(set => map.addTilesetImage(set.key, set.key, TILE_SIZE, TILE_SIZE, 0, 0, set.firstgid))
+      .filter((set): set is Phaser.Tilemaps.Tileset => set !== null)
 
-    // Cuadrícula
-    const grid = this.add.graphics()
-    grid.lineStyle(1, 0x3a6a49, 0.3)
-    for (let x = 0; x <= WORLD_W; x += 32) {
-      grid.moveTo(x, 0); grid.lineTo(x, WORLD_H)
-    }
-    for (let y = 0; y <= WORLD_H; y += 32) {
-      grid.moveTo(0, y); grid.lineTo(WORLD_W, y)
-    }
-    grid.strokePath()
-
-    // Zonas de mini-juegos
-    this.zones = this.physics.add.staticGroup()
-    this.zoneKeys = []
-
-    for (const key of MINI_GAMES) {
-      const def = ZONE_DEFS[key]
-      const isComplete = GameRegistry.isComplete(key)
-      const color = isComplete ? 0x888888 : def.color
-
-      // Edificio visual
-      const building = this.add.rectangle(def.x, def.y, 120, 120, color)
-        .setStrokeStyle(3, 0xffffff, isComplete ? 0.4 : 0.9)
-
-      // Checkmark si ya se completó
-      if (isComplete) {
-        this.add.text(def.x, def.y - 10, '✓', { fontSize: '32px', color: '#aaffaa' }).setOrigin(0.5)
+    const buildLayer = (name: string, data: number[][], depth: number) => {
+      const layer = map.createBlankLayer(name, tilesets)!
+      for (let y = 0; y < MAP_H; y++) {
+        for (let x = 0; x < MAP_W; x++) {
+          if (data[y][x] !== EMPTY) layer.putTileAt(data[y][x], x, y)
+        }
       }
-
-      // Label
-      this.add.text(def.x, def.y + 72, MINI_GAME_LABELS[key], {
-        fontSize: '13px', color: '#ffffff', stroke: '#000000', strokeThickness: 3,
-      }).setOrigin(0.5)
-
-      // Zona trigger (física estática invisible, más pequeña que el edificio)
-      if (!isComplete) {
-        const trigger = this.physics.add.staticImage(def.x, def.y, '__DEFAULT')
-          .setDisplaySize(120, 120)
-          .setAlpha(0)
-        ;(trigger as unknown as { miniGameKey: MiniGameKey }).miniGameKey = key
-        this.zones.add(trigger)
-        this.zoneKeys.push(key)
-      }
-
-      building.setDepth(0)
+      return layer.setScale(MAP_SCALE).setDepth(depth)
     }
+
+    buildLayer('ground', village.ground, 0)
+    const objects = buildLayer('objects', village.objects, 2)
+    buildLayer('above', village.above, 10) // tree canopies: drawn over the player
+
+    // Invisible collision layer: any tile placed here blocks the player
+    const blockers = map.createBlankLayer('blockers', tilesets)!
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        if (village.blocked[y][x]) blockers.putTileAt(GRASS, x, y)
+      }
+    }
+    blockers.setScale(MAP_SCALE).setVisible(false).setCollision(GRASS)
 
     // Personaje
-    this.player = this.physics.add.sprite(WORLD_W / 2, WORLD_H / 2, 'player')
+    this.facing = 'south'
+    this.player = this.physics.add.sprite(
+      (village.spawn.x + 0.5) * tileScreenSize,
+      (village.spawn.y + 0.5) * tileScreenSize,
+      NAYELI_KEY,
+    )
     this.player.setCollideWorldBounds(true)
-    this.player.setDepth(1)
+    this.player.setDepth(5)
+    // 84px cell with padding: keep the hitbox small and at the feet, Pokémon-style
+    this.player.body!.setSize(28, 16).setOffset(28, 62)
+    this.player.play(idleAnim(this.facing))
+    this.physics.add.collider(this.player, blockers)
+
+    // Houses: label, completed look and door trigger
+    for (const house of village.houses) {
+      const isComplete = GameRegistry.isComplete(house.key)
+
+      this.add.text(
+        house.labelAnchor.x * tileScreenSize,
+        house.labelAnchor.y * tileScreenSize - 6,
+        MINI_GAME_LABELS[house.key],
+        {
+          fontFamily: PIXEL_FONT,
+          fontSize: '10px',
+          color: isComplete ? '#b8b8c4' : '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 4,
+        },
+      ).setOrigin(0.5, 1).setDepth(12)
+
+      if (isComplete) {
+        for (const { x, y } of house.tiles) {
+          const houseTile = objects.getTileAt(x, y)
+          if (houseTile) houseTile.tint = COMPLETED_TINT
+        }
+        continue
+      }
+
+      const doorLeft = house.door.x * tileScreenSize
+      const doorTop = house.door.y * tileScreenSize
+      const doorCenterX = doorLeft + tileScreenSize / 2
+      const doorBottom = doorTop + tileScreenSize
+      const zoneH = tileScreenSize + DOOR_TRIGGER_EXTRA
+      const zone = this.add.zone(doorCenterX, doorTop + zoneH / 2, tileScreenSize, zoneH)
+      this.physics.add.existing(zone, true)
+
+      this.physics.add.overlap(this.player, zone, () => {
+        if (this.transitioning) return
+        const feet = (this.player.body as Phaser.Physics.Arcade.Body).center
+        if (
+          feet.y <= doorBottom + DOOR_TRIGGER_MAX_OFFSET_Y &&
+          Math.abs(feet.x - doorCenterX) <= DOOR_TRIGGER_MAX_OFFSET_X
+        ) {
+          this.enterMiniGame(house.key)
+        }
+      })
+    }
 
     // Cámara sigue al jugador
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
@@ -111,18 +159,8 @@ export default class WorldScene extends Phaser.Scene {
     // HUD fijo en cámara
     this.hudText = this.add.text(12, 12,
       `Mini-juegos: ${GameRegistry.completedCount()} / ${MINI_GAMES.length}`,
-      { fontSize: '16px', color: '#ffffff', stroke: '#000000', strokeThickness: 3 }
-    ).setScrollFactor(0).setDepth(10)
-
-    // Colisión con zonas
-    this.physics.add.overlap(
-      this.player,
-      this.zones,
-      (_player, trigger) => {
-        const key = (trigger as unknown as { miniGameKey: MiniGameKey }).miniGameKey
-        if (key && !this.transitioning) this.enterMiniGame(key)
-      }
-    )
+      { fontFamily: PIXEL_FONT, fontSize: '10px', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }
+    ).setScrollFactor(0).setDepth(20)
 
     // Fade in al volver de un mini-juego
     this.cameras.main.fadeIn(400, 0, 0, 0)
@@ -154,6 +192,16 @@ export default class WorldScene extends Phaser.Scene {
 
     if ((left || right) && (up || down)) {
       body.velocity.normalize().scale(SPEED)
+    }
+
+    const dx = left ? -1 : right ? 1 : 0
+    const dy = up ? -1 : down ? 1 : 0
+    const dir = directionFromInput(dx, dy)
+    if (dir) {
+      this.facing = dir
+      this.player.anims.play(walkAnim(dir), true)
+    } else {
+      this.player.anims.play(idleAnim(this.facing), true)
     }
 
     // Actualiza HUD

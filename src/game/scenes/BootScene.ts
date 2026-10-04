@@ -1,4 +1,6 @@
 import Phaser from 'phaser'
+import { createNayeliAnims, preloadNayeli } from '../characters/nayeli'
+import { applyVillageTextureFilters, preloadVillageTilesets } from '../world/tilesets'
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -6,15 +8,14 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Genera textura placeholder del personaje (cuadrado rosa 32x32)
-    const gfx = this.make.graphics({ x: 0, y: 0 })
-    gfx.fillStyle(0xff69b4) // rosa
-    gfx.fillRect(0, 0, 32, 32)
-    gfx.generateTexture('player', 32, 32)
-    gfx.destroy()
+    preloadNayeli(this)
+    preloadVillageTilesets(this)
   }
 
   create() {
+    applyVillageTextureFilters(this)
+    // Animations live in the global AnimationManager, so every scene can use them
+    createNayeliAnims(this)
     this.scene.start('WorldScene')
   }
 }

@@ -16,6 +16,11 @@ Cuando Alan pida guardar algo en memoria, siempre hacerlo en **tres lugares**:
 - Mensajes **en español**
 - **Sin** línea `Co-Authored-By` — Alan no quiere que Claude aparezca en el registro
 
+## Reglas de estilo
+
+- **Nunca usar emojis/emoticones** (UI, textos del juego, código). Usar formas CSS o sprites pixel-art en su lugar.
+- **Estilo visual 16-bit pixel art** (era SNES/GBA) en todo el juego. Perspectiva **top-down tipo Pokémon** (4 direcciones), no side-scroller; los juegos de acción citados son solo referencia estética. Inspiración: Super Mario, Contra, Metal Slug; Cuphead solo en jugabilidad/jefes (su arte dibujado a mano choca con el pixel art). Referencia: `src/components/MainMenu.css` — fuente Press Start 2P en múltiplos de 8px, colores en bandas duras sin blur, animaciones con `steps()`.
+
 ## Tech stack
 
 - React 19 + TypeScript + Vite 8
